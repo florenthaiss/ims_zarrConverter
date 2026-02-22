@@ -1,0 +1,15 @@
+schema_version: 0.7.0
+application:
+  first_time: false
+  window_position:
+  - 0
+  - -6
+  window_size:
+  - 1920
+  - 1135
+  window_maximized: true
+  plugin_widget_positions:
+    console: bottom
+    layer controls: left
+    layer list: left
+    wizard (napari-animation): right

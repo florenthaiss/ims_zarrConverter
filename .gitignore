@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+napari311-env/
+.venv/
+venv/
+
+# Runtime/output folders
+logs/
+.napari_localappdata/
+*.ome.zarr/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
