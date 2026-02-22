@@ -13,7 +13,7 @@
 - `napari311-env`: Python 3.11 environment for Napari compatibility.
 
 ## Recommended Conversion Settings
-- Workers: `24`
+- Workers: `24` adapt this to the number of cores available on your CPU
 - Chunks: `z=16, y=2048, x=2048`
 - Compression: `lz4` with `clevel=1`
 - Format: OME-Zarr v2 (`zarr_format=2`)
@@ -48,7 +48,7 @@ With `--preserve-z` (enabled in the launcher), level `3` means XY decimation tar
 You can choose at launch with `--rendering`:
 - `attenuated_mip`, `mip`, `translucent`, `iso`, `minip`, `average`, `additive`
 
-Optional plugins are enabled:
+Optional plugins enabled:
 - `napari-3d-ortho-viewer`
 - `napari-animation`
 
