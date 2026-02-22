@@ -2,8 +2,8 @@
 
 ## Location
 - Workspace: `D:\zarrConverterCodex`
-- Source IMS: `H:\exaSPIM_123456_2025-11-28_18-23-50\exaSPIM\tile_000000_ch_639.ims`
-- Output OME-Zarr: `D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr`
+- Source IMS: `\yourpathto.ims`
+- Output OME-Zarr: `*.zarr`
 
 ## Final Files Kept
 - `ims_to_omezarr_fast.py`: fast converter (OME-Zarr v2 writer).
@@ -20,18 +20,18 @@
 
 ## Run Conversion
 ```powershell
-D:\zarrConverterCodex\run_full_ims2zarr_lz4.cmd
+\run_full_ims2zarr_lz4.cmd
 ```
 
 Equivalent direct command:
 ```powershell
-C:\Python314\python.exe D:\zarrConverterCodex\ims_to_omezarr_fast.py --input "H:\exaSPIM_123456_2025-11-28_18-23-50\exaSPIM\tile_000000_ch_639.ims" --output "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr" --workers 24 --chunk-z 16 --chunk-y 2048 --chunk-x 2048 --compression lz4 --clevel 1
+C:\Python314\python.exe ims_to_omezarr_fast.py --input "*.ims" --output "*.ome.zarr" --workers 24 --chunk-z 16 --chunk-y 2048 --chunk-x 2048 --compression lz4 --clevel 1
 ```
 
 ## Open in Napari
 Recommended:
 ```powershell
-D:\zarrConverterCodex\open_tile_000000_ch_639_napari_working.cmd
+*_napari_working.cmd
 ```
 This now starts in native 2D mode (level-0 slices) for exact image quality.
 You can switch the launcher back to 3D by editing `START_VIEW` in `open_tile_000000_ch_639_napari_working.cmd`.
