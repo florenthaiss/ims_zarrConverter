@@ -1,111 +1,107 @@
-# IMS -> OME-Zarr v2 Runbook
+# IMS to OME-Zarr Converter
 
-## Location
-- Workspace: `D:\zarrConverterCodex`
-- Source IMS: `\yourpathto.ims`
-- Output OME-Zarr: `*.zarr`
+This repository provides a practical workflow to:
+- Convert `.ims` microscopy volumes to OME-Zarr v2.
+- Open OME-Zarr in Napari with stable startup defaults and auto-contrast.
+- Crop an OME-Zarr volume by a Z range.
 
-## Final Files Kept
-- `ims_to_omezarr_fast.py`: fast converter (OME-Zarr v2 writer).
-- `run_full_ims2zarr_lz4.cmd`: full conversion launcher (recommended settings).
-- `open_in_napari.py`: Napari loader with automatic contrast limits.
+The project is Windows-first and uses explicit path-based launch scripts.
+
+## Repository Contents
+- `ims_to_omezarr_fast.py`: parallel IMS to OME-Zarr v2 converter.
+- `run_full_ims2zarr_lz4.cmd`: one-click conversion launcher (edit paths/settings inside).
+- `open_in_napari.py`: OME-Zarr loader for Napari with 2D/3D options.
 - `open_tile_000000_ch_639_napari_working.cmd`: one-click Napari launcher.
-- `napari311-env`: Python 3.11 environment for Napari compatibility.
+- `crop_omezarr_z.py`: Z-range cropper for OME-Zarr pyramids.
+- `napari_settings_stable.yaml`: Napari config profile used by launcher.
 
-## Recommended Conversion Settings
-- Workers: `24` adapt this to the number of cores available on your CPU
-- Chunks: `z=16, y=2048, x=2048`
-- Compression: `lz4` with `clevel=1`
-- Format: OME-Zarr v2 (`zarr_format=2`)
+## Path Entries to Adapt
+Use these example entries and replace them with your own locations.
 
-## Run Conversion
-```powershell
-\run_full_ims2zarr_lz4.cmd
+```text
+REPO_ROOT   = D:\zarrConverterCodex
+INPUT_IMS   = H:\exaSPIM_123456_2025-11-28_18-23-50\exaSPIM\tile_000000_ch_639.ims
+OUTPUT_ZARR = D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr
+PY_CONVERT  = C:\Python314\python.exe
+PY_NAPARI   = D:\zarrConverterCodex\napari311-env\Scripts\python.exe
 ```
 
-Equivalent direct command:
+If you use the `.cmd` launchers, update path variables at the top of each file:
+- `run_full_ims2zarr_lz4.cmd`: `PY`, `SCRIPT`, `INPUT`, `OUTPUT`
+- `open_tile_000000_ch_639_napari_working.cmd`: `PY`, `SCRIPT`, fallback `ZARR` path
+
+## Requirements
+Minimum Python packages used by scripts:
+- `numpy`
+- `h5py`
+- `hdf5plugin`
+- `zarr`
+- `numcodecs`
+- `napari`
+- `napari-ome-zarr`
+
+Example install (single environment):
+
 ```powershell
-C:\Python314\python.exe ims_to_omezarr_fast.py --input "*.ims" --output "*.ome.zarr" --workers 24 --chunk-z 16 --chunk-y 2048 --chunk-x 2048 --compression lz4 --clevel 1
+C:\Python314\python.exe -m pip install numpy h5py hdf5plugin zarr numcodecs napari napari-ome-zarr
 ```
 
-## Open in Napari
-Recommended:
+## 1) Convert IMS to OME-Zarr
+Recommended command shape:
+
 ```powershell
-*_napari_working.cmd
-```
-This now starts in native 2D mode (level-0 slices) for exact image quality.
-You can switch the launcher back to 3D by editing `START_VIEW` in `open_tile_000000_ch_639_napari_working.cmd`.
-The launcher uses a stability profile by default:
-- `QT_API=pyside6` (forces Qt6 runtime instead of the crashing Qt5 runtime)
-- `QT_OPENGL` left on auto for Qt6 (Qt6 no longer supports `angle` value)
-- `LOCALAPPDATA=D:\zarrConverterCodex\.napari_localappdata` (isolated local cache/state)
-- `NAPARI_CONFIG=D:\zarrConverterCodex\napari_settings_stable.yaml`
-- if 3D launch fails, it automatically retries in 2D mode
-
-Default 3D rendering mode is `mip`.
-Launcher default 3D pyramid level is `3` (higher resolution than level `4`).
-With `--preserve-z` (enabled in the launcher), level `3` means XY decimation target only; Z remains full depth.
-You can choose at launch with `--rendering`:
-- `attenuated_mip`, `mip`, `translucent`, `iso`, `minip`, `average`, `additive`
-
-Optional plugins enabled:
-- `napari-3d-ortho-viewer`
-- `napari-animation`
-
-`napari-ome-zarr` remains enabled for loading OME-Zarr data.
-
-Optional 2D startup:
-```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr" --view 2d
+C:\Python314\python.exe D:\zarrConverterCodex\ims_to_omezarr_fast.py --input "H:\path\to\input.ims" --output "D:\path\to\output.ome.zarr" --workers 24 --chunk-z 16 --chunk-y 2048 --chunk-x 2048 --compression lz4 --clevel 1
 ```
 
-Optional manual 3D level selection:
+Or run the launcher after editing its variables:
+
 ```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr" --view 3d --pyramid-level 2
+D:\zarrConverterCodex\run_full_ims2zarr_lz4.cmd
 ```
 
-Preserve full Z in 3D while keeping memory bounded:
+### Important converter options
+- `--workers`: process count (set to available CPU budget).
+- `--chunk-z --chunk-y --chunk-x`: output chunk size.
+- `--compression`: `none`, `lz4`, or `zstd`.
+- `--clevel`: compression level for `lz4`/`zstd`.
+- `--max-tasks`: benchmark mode (process first N slabs only).
+
+The converter writes `conversion_stats.json` inside output `.ome.zarr`.
+
+## 2) Open OME-Zarr in Napari
+Quick start with script defaults:
+
 ```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr" --view 3d --pyramid-level 3 --preserve-z --max-voxels 300000000
+D:\zarrConverterCodex\open_tile_000000_ch_639_napari_working.cmd
 ```
 
-Example: force an obvious rendering mode
+Direct Python usage:
+
 ```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr" --view 3d --rendering iso
+D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\path\to\dataset.ome.zarr" --view 2d
 ```
 
-Try full-resolution 3D explicitly (can be unstable/heavy):
+3D example:
+
 ```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr" --view 3d --pyramid-level 0
+D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\path\to\dataset.ome.zarr" --view 3d --rendering attenuated_mip --pyramid-level 3 --preserve-z --max-voxels 300000000
 ```
 
-## Installed Napari Plugins
-- `napari-ome-zarr`: OME-Zarr reader.
-- `napari-3d-ortho-viewer`: synchronized orthogonal views for 3D volumes.
-- `napari-animation`: keyframe/camera animation and movie export.
+### Napari script options
+- `--view`: `2d` or `3d`
+- `--pyramid-level`: choose multiscale level (`0` = full resolution)
+- `--preserve-z`: keep full Z, decimate XY only
+- `--max-voxels`: XY decimation budget used with `--preserve-z`
+- `--rendering`: 3D rendering mode
 
-## Crop OME-Zarr (Z Range)
-Use `crop_omezarr_z.py` to crop by Z on level-0 indices.
-`--z-start` and `--z-end` are inclusive.
+## 3) Crop OME-Zarr by Z range
+`--z-start` and `--z-end` are inclusive level-0 indices.
 
-Example used here (`60..770`):
 ```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\crop_omezarr_z.py --input D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr --output D:\zarrConverterCodex\tile_000000_ch_639_z60_770.ome.zarr --z-start 60 --z-end 770 --overwrite
+D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\crop_omezarr_z.py --input "D:\path\to\input.ome.zarr" --output "D:\path\to\output_crop.ome.zarr" --z-start 60 --z-end 770 --overwrite
 ```
-
-## Latest Completed Run (Reference)
-- Runtime: `1238.0 s` (`20m 38s`)
-- Throughput: `1633.55 MB/s`
-- Output size: `~0.5736 TB`
-- Log files:
-  - `D:\zarrConverterCodex\logs\full_lz4_rerun_stdout_20260216_024741.log`
-  - `D:\zarrConverterCodex\logs\full_lz4_rerun_stderr_20260216_024741.log`
 
 ## Troubleshooting
-- If Napari does not launch, use Python 3.11 env explicitly:
-```powershell
-D:\zarrConverterCodex\napari311-env\Scripts\python.exe D:\zarrConverterCodex\open_in_napari.py --path "D:\zarrConverterCodex\tile_000000_ch_639.ome.zarr"
-```
-- If image looks dark/black initially in viewer:
-  - adjust contrast limits manually (for this dataset, low values are common),
-  - keep gamma near `0.7-1.0`.
+- If a launcher fails, run the corresponding Python command directly to see full errors.
+- If Napari appears black/dim initially, adjust contrast limits and gamma.
+- If path errors occur, verify all configured entries are absolute Windows paths.
